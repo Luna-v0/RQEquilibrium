@@ -1,0 +1,11 @@
+[project]
+name = "rqequilibrium"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=2.2.6",
+    "open-spiel>=1.6",
+    "scipy>=1.15.3",
+]
