@@ -110,15 +110,38 @@ class RQE:
 
         return pi1, pi2
 
+    @staticmethod
+    def print_game(R1: np.ndarray, R2: np.ndarray):
+        """
+        Print the game matrices for both players.
+        """
+        for i in range(R1.shape[0]):
+            row = []
+            for j in range(R1.shape[1]):
+                row.append(f"{int(R1[i, j])}, {int(R2[i, j])}")
+            print(" | ".join(row))
+
 
 if __name__ == "__main__":
     # Example usage
-    R1 = np.array([[-6, -6], [0, -10]])
-    R2 = np.array([[-10, 0], [-1, -1]])
-
-    rqe_solver = RQE(tau1=0.1, tau2=0.1, epsilon1=1, epsilon2=1)
+    R1 = np.array([[3, 0], [5, 1]])
+    R2 = np.array([[3, 5], [0, 1]])
+    RQE.print_game(R1, R2)
+    rqe_solver = RQE(tau1=0.005, tau2=0.005, epsilon1=200, epsilon2=200)
     pi1, pi2 = rqe_solver.optimize(R1, R2)
 
-    print("Computed policies:")
-    print("Player 1:", pi1)
-    print("Player 2:", pi2)
+    print("Computed policies for RQE")
+    # print("Player 1:", np.argmax(pi1), "with policy:", pi1)
+    print(f"Player 1: Best Action {np.argmax(pi1)} with policy: {pi1}")
+    # print("Player 2:", np.argmax(pi2), "with policy:", pi2)
+    print(f"Player 2: Best Action {np.argmax(pi2)} with policy: {pi2}")
+
+    import nashpy as nash
+
+    game = nash.Game(R1, R2)
+    equilibrium = game.support_enumeration()
+    print("Nash Equilibrium using nashpy:")
+
+    for eq in equilibrium:
+        print(f"Player 1: Best Action {np.argmax(eq[0])} with policy: {eq[0]}")
+        print(f"Player 2: Best Action {np.argmax(eq[1])} with policy: {eq[1]}")
