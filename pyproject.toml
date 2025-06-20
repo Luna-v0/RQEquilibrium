@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "autograd>=1.8.0",
     "numpy>=2.2.6",
     "open-spiel>=1.6",
     "scipy>=1.15.3",

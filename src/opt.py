@@ -1,7 +1,7 @@
 from typing import Callable
 
-import numpy as np
 from autograd import grad
+from autograd import numpy as np
 from scipy.special import logsumexp
 
 
@@ -40,6 +40,25 @@ class ProjectedGradientDescent:
             w = self.projection(w - self.lr * gradient(w))
 
         return w
+
+
+def project_simplex(x: np.ndarray) -> np.ndarray:
+    """
+    Project a vector onto the simplex defined by the constraints that all elements are non-negative
+    and sum to 1.
+    """
+    if x.ndim != 1:
+        return np.vstack([project_simplex(xi) for xi in x])
+
+    if np.all(x >= 0) and np.isclose(np.sum(x), 1):
+        return x
+
+    n = len(x)
+    u = np.sort(x)[::-1]
+    cssv = np.cumsum(u)
+    rho = np.where(u > (cssv - 1) / np.arange(1, n + 1))[0][-1]
+    theta = (cssv[rho] - 1) / (rho + 1)
+    return np.maximum(x - theta, 0)
 
 
 def kl_divergence(p: np.ndarray, q: np.ndarray, tau: float) -> float:
