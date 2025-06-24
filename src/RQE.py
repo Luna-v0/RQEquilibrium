@@ -1,10 +1,11 @@
 # File for defining the RQE solution concept
+from dataclasses import dataclass
 from typing import Callable, Union
 
 from autograd import grad
 from autograd import numpy as np
 
-from src.opt import (
+from opt import (
     ProjectedGradientDescent,
     kl_divergence,
     kl_reversed,
@@ -14,27 +15,28 @@ from src.opt import (
 )
 
 
+@dataclass
+class Player:
+    tau: float
+    epsilon: float
+    game_matrix: np.ndarray
+
+
 class RQE:
     quantal_function: Callable
     risk_function: Callable
 
     def __init__(
         self,
-        tau1: float,
-        tau2: float,
-        epsilon1: float,
-        epsilon2: float,
+        players: list[Player],
         lr=0.1,
         max_iter=500,
         br_iters=50,
-        quantal_function: Union[Callable, str] = "negative_entropy",
+        quantal_function: Union[Callable, str] = "log_barrier",
         risk_function: Union[Callable, str] = "kl_divergence",
         projection: Callable = project_simplex,
     ):
-        self.tau1 = tau1
-        self.tau2 = tau2
-        self.epsilon1 = epsilon1
-        self.epsilon2 = epsilon2
+        self.players = players
         self.lr = lr
         self.max_iter = max_iter
         self.br_iters = br_iters
@@ -77,19 +79,29 @@ class RQE:
         quantal_term = -R @ pi1 + epsilon * self.grad_quantal(p)
         return risk_term, quantal_term
 
-    def optimize(self, R1: np.ndarray, R2: np.ndarray) -> np.ndarray:
+    def optimize(self) -> np.ndarray:
         """
         Optimize the policies for both players using projected gradient descent.
         """
-        R2 = R2.T  # Ensure R2 is transposed to match the expected shape
+
         players = np.random.rand(4, 2)
         players /= np.sum(players, axis=1, keepdims=True)
 
         loss_p1 = lambda p, pi1, pi2: self.loss_function(
-            p, pi1, pi2, R1, self.tau1, self.epsilon1
+            p,
+            pi1,
+            pi2,
+            self.players[0].game_matrix,
+            self.players[0].tau,
+            self.players[0].epsilon,
         )
         loss_p2 = lambda p, pi1, pi2: self.loss_function(
-            p, pi1, pi2, R2, self.tau2, self.epsilon2
+            p,
+            pi1,
+            pi2,
+            self.players[1].game_matrix.T,
+            self.players[1].tau,
+            self.players[1].epsilon,
         )
         pgd = ProjectedGradientDescent(
             lr=self.lr,
@@ -105,6 +117,7 @@ class RQE:
             players = pgd.step(players, grads)
 
             players = np.clip(players, 1e-8, 1 - 1e-8)
+
         return players
 
     @staticmethod
@@ -124,9 +137,15 @@ if __name__ == "__main__":
     R1 = np.array([[3, 0], [5, 1]])
     R2 = np.array([[3, 5], [0, 1]])
     RQE.print_game(R1, R2)
-    rqe_solver = RQE(tau1=0.005, tau2=0.005, epsilon1=200, epsilon2=200)
-    pi1, pi2 = rqe_solver.optimize(R1, R2)
+    players = [
+        Player(tau=0.005, epsilon=200, game_matrix=R1),
+        Player(tau=0.005, epsilon=200, game_matrix=R2),
+    ]
+    rqe_solver = RQE(players=players, lr=0.01, max_iter=1000, br_iters=50)
+    x = rqe_solver.optimize()
+    print(x)
 
+    raise ""
     print("Computed policies for RQE")
     # print("Player 1:", np.argmax(pi1), "with policy:", pi1)
     print(f"Player 1: Best Action {np.argmax(pi1)} with policy: {pi1}")
