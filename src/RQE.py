@@ -5,7 +5,7 @@ from typing import Callable, Union
 from autograd import grad
 from autograd import numpy as np
 
-from opt import (
+from .opt import (
     ProjectedGradientDescent,
     kl_divergence,
     kl_reversed,
@@ -62,22 +62,15 @@ class RQE:
         self.grad_risk = grad(self.risk_function)
         self.grad_quantal = grad(self.quantal_function)
 
-    def loss_function(
-        self,
-        p: np.ndarray,
-        pi1: np.ndarray,
-        pi2: np.ndarray,
-        R: np.ndarray,
-        tau: float,
-        epsilon: float,
-    ) -> tuple[float, float]:
-        """
-        Compute the loss function for a given policy p and reward matrix R.
-        """
+    def risk_term(
+        self, game: np.ndarray, p: np.ndarray, x: np.ndarray, y: np.ndarray, tau: float
+    ) -> float:
+        return game.T @ p + (1 / tau) * self.grad_risk(x, y)
 
-        risk_term = R.T @ p + (1 / tau) * self.grad_risk(pi1, pi2)
-        quantal_term = -R @ pi1 + epsilon * self.grad_quantal(p)
-        return risk_term, quantal_term
+    def quantal_term(
+        self, game: np.ndarray, p: np.ndarray, x: np.ndarray, epsilon: float
+    ) -> float:
+        return -game @ x + epsilon * self.grad_quantal(p)
 
     def optimize(self) -> np.ndarray:
         """
@@ -87,22 +80,6 @@ class RQE:
         players = np.random.rand(4, 2)
         players /= np.sum(players, axis=1, keepdims=True)
 
-        loss_p1 = lambda p, pi1, pi2: self.loss_function(
-            p,
-            pi1,
-            pi2,
-            self.players[0].game_matrix,
-            self.players[0].tau,
-            self.players[0].epsilon,
-        )
-        loss_p2 = lambda p, pi1, pi2: self.loss_function(
-            p,
-            pi1,
-            pi2,
-            self.players[1].game_matrix.T,
-            self.players[1].tau,
-            self.players[1].epsilon,
-        )
         pgd = ProjectedGradientDescent(
             lr=self.lr,
             projection=self.projection,
@@ -111,8 +88,37 @@ class RQE:
         for _ in range(self.max_iter):
             grads = np.zeros_like(players)
 
-            grads[1], grads[0] = loss_p1(players[0], players[1], players[2])
-            grads[3], grads[2] = loss_p2(players[2], players[3], players[0])
+            x = self.quantal_term(
+                self.players[0].game_matrix,
+                players[0],
+                players[1],
+                self.players[0].epsilon,
+            )
+            px = self.risk_term(
+                self.players[0].game_matrix,
+                players[0],
+                players[1],
+                players[2],
+                self.players[0].tau,
+            )
+            y = self.quantal_term(
+                self.players[1].game_matrix.T,
+                players[2],
+                players[3],
+                self.players[1].epsilon,
+            )
+            py = self.risk_term(
+                self.players[1].game_matrix.T,
+                players[2],
+                players[3],
+                players[0],
+                self.players[1].tau,
+            )
+
+            grads[0] = x
+            grads[1] = px
+            grads[2] = y
+            grads[3] = py
 
             players = pgd.step(players, grads)
 
