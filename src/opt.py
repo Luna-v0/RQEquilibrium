@@ -2,7 +2,6 @@ from typing import Callable
 
 from autograd import grad
 from autograd import numpy as np
-from scipy.special import logsumexp
 
 
 class ProjectedGradientDescent:
@@ -14,32 +13,24 @@ class ProjectedGradientDescent:
 
     def __init__(
         self,
-        cost_function: Callable,
         lr: float = 0.1,
-        epochs=1000,
         projection=lambda x: x,
     ):
 
-        self.cost_function = cost_function
         self.lr = lr
-        self.epochs = epochs
         self.projection = projection
 
-    def optimize(self, initial_points) -> np.array:
+    def step(self, w: np.ndarray, gradients_values: np.ndarray) -> np.ndarray:
         """
-        Perform the optimization using projected gradient descent.
+        Perform a single step of projected gradient descent.
 
+        Args:
+            w (np.ndarray): The current point.
+            gradients_values (np.ndarray): The computed gradients at the current point.
         Returns:
-            np.array: The optimized points after the specified number of epochs.
+            np.ndarray: The updated point after one step.
         """
-        gradient = grad(self.cost_function)
-
-        w = np.array(initial_points, dtype=float)
-
-        for _ in range(self.epochs):
-            w = self.projection(w - self.lr * gradient(w))
-
-        return w
+        return self.projection(w - self.lr * gradients_values)
 
 
 def project_simplex(x: np.ndarray) -> np.ndarray:
@@ -61,21 +52,21 @@ def project_simplex(x: np.ndarray) -> np.ndarray:
     return np.maximum(x - theta, 0)
 
 
-def kl_divergence(p: np.ndarray, q: np.ndarray, tau: float) -> float:
+def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the KL divergence between two probability distributions p and q.
     """
     p = np.clip(p, 1e-12, 1 - 1e-12)
     q = np.clip(q, 1e-12, 1 - 1e-12)
-    return np.sum(p * (np.log(p) - np.log(q))) / tau
+    return np.sum(p * (np.log(p) - np.log(q)))
 
 
-def kl_reversed(p: np.ndarray, q: np.ndarray, tau: float) -> float:
+def kl_reversed(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the reversed KL divergence between two probability distributions p and q.
     """
 
-    return kl_divergence(q, p, tau)
+    return kl_divergence(q, p)
 
 
 def negative_entropy(p: np.ndarray) -> float:

@@ -1,9 +1,10 @@
 # File for defining the RQE solution concept
 from typing import Callable, Union
 
-import numpy as np
+from autograd import grad
+from autograd import numpy as np
 
-from opt import (
+from src.opt import (
     ProjectedGradientDescent,
     kl_divergence,
     kl_reversed,
@@ -56,16 +57,19 @@ class RQE:
         elif risk_function == "kl_reversed":
             self.risk_function = kl_reversed
 
+        self.grad_risk = grad(self.risk_function)
+        self.grad_quantal = grad(self.quantal_function)
+
     def loss_function(
         self, p: np.ndarray, pi, R: np.ndarray, tau: float, epsilon: float
-    ) -> float:
+    ) -> tuple[float, float]:
         """
         Compute the loss function for a given policy p and reward matrix R.
         """
-        expected_reward = -p @ R @ pi
-        risk_term = self.risk_function(p, pi, tau)
-        quantal_term = self.quantal_function(p) * epsilon
-        return expected_reward + risk_term + quantal_term + epsilon * log_barrier(p)
+
+        risk_term = R.T @ pi + self.grad_risk(p, pi) / tau
+        quantal_term = R @ p + self.grad_quantal(p) * epsilon
+        return risk_term, quantal_term
 
     def optimize(self, R1: np.ndarray, R2: np.ndarray) -> np.ndarray:
         """
@@ -74,39 +78,25 @@ class RQE:
         n1, n2 = R1.shape[0], R2.shape[0]
         pi1 = np.full(n1, 1.0 / n1)
         pi2 = np.full(n2, 1.0 / n2)
+        players = np.random.rand(4, 2)
+        players /= np.sum(players, axis=1, keepdims=True)
 
-        loss_p1 = lambda p: self.loss_function(p, pi2, R1, self.tau1, self.epsilon1)
-        loss_p2 = lambda p: self.loss_function(p, pi1, R2, self.tau2, self.epsilon2)
-        pgd1 = ProjectedGradientDescent(
-            cost_function=loss_p1,
-            lr=self.lr,
-            epochs=self.max_iter,
-            projection=self.projection,
-        )
-        pgd2 = ProjectedGradientDescent(
-            cost_function=loss_p2,
-            lr=self.lr,
-            epochs=self.max_iter,
-            projection=self.projection,
-        )
+        loss_p1 = lambda p, pi: self.loss_function(p, pi, R1, self.tau1, self.epsilon1)
+        loss_p2 = lambda p, pi: self.loss_function(p, pi, R2, self.tau2, self.epsilon2)
+        pgd = ProjectedGradientDescent(lr=self.lr, projection=self.projection)
+
+        players = np.array([pi1, pi2])
+        print("Players2", players)
 
         for _ in range(self.max_iter):
-            old_pi1 = pi1.copy()
-            old_pi2 = pi2.copy()
+            grads = np.zeros_like(players)
 
-            pi1 = pgd1.optimize(pi1)
-            pi2 = pgd2.optimize(pi2)
-
-            # Update policies based on the current policies
-            pi1 = self.projection(pi1)
-            pi2 = self.projection(pi2)
-
-            # Check for convergence
-            if (
-                np.linalg.norm(pi1 - old_pi1) < self.EPS
-                and np.linalg.norm(pi2 - old_pi2) < self.EPS
-            ):
-                break
+            grads[0], grads[1] = loss_p1(pi1, pi2)
+            grads[2], grads[3] = loss_p2(pi2, pi1)
+            print(f"Gradients: Player 1: {grad_p1}, Player 2: {grad_p2}")
+            pi1 = pgd.step(pi1, grad_p1)
+            pi2 = pgd.step(pi2, grad_p2)
+            break
 
         return pi1, pi2
 
