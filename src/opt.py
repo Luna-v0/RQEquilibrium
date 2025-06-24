@@ -56,8 +56,6 @@ def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the KL divergence between two probability distributions p and q.
     """
-    p = np.clip(p, 1e-12, 1 - 1e-12)
-    q = np.clip(q, 1e-12, 1 - 1e-12)
     return np.sum(p * (np.log(p) - np.log(q)))
 
 
@@ -73,7 +71,6 @@ def negative_entropy(p: np.ndarray) -> float:
     """
     Compute the negative entropy of a probability distribution p.
     """
-    p = np.clip(p, 1e-12, 1 - 1e-12)
     return -np.sum(p * np.log(p))
 
 
@@ -81,5 +78,4 @@ def log_barrier(p: np.ndarray) -> float:
     """
     Compute the log barrier function for a probability distribution p.
     """
-    p = np.clip(p, 1e-12, 1 - 1e-12)
     return -np.sum(np.log(p))

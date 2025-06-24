@@ -61,37 +61,50 @@ class RQE:
         self.grad_quantal = grad(self.quantal_function)
 
     def loss_function(
-        self, p: np.ndarray, pi, R: np.ndarray, tau: float, epsilon: float
+        self,
+        p: np.ndarray,
+        pi1: np.ndarray,
+        pi2: np.ndarray,
+        R: np.ndarray,
+        tau: float,
+        epsilon: float,
     ) -> tuple[float, float]:
         """
         Compute the loss function for a given policy p and reward matrix R.
         """
 
-        risk_term = R @ pi + self.grad_risk(p, pi) / tau
-        quantal_term = R @ p + self.grad_quantal(p) * epsilon
+        risk_term = R.T @ p + (1 / tau) * self.grad_risk(pi1, pi2)
+        quantal_term = -R @ pi1 + epsilon * self.grad_quantal(p)
         return risk_term, quantal_term
 
     def optimize(self, R1: np.ndarray, R2: np.ndarray) -> np.ndarray:
         """
         Optimize the policies for both players using projected gradient descent.
         """
-        n1, n2 = R1.shape[0], R2.shape[0]
-        pi1 = np.full(n1, 1.0 / n1)
-        pi2 = np.full(n2, 1.0 / n2)
+        R2 = R2.T  # Ensure R2 is transposed to match the expected shape
         players = np.random.rand(4, 2)
         players /= np.sum(players, axis=1, keepdims=True)
 
-        loss_p1 = lambda p, pi: self.loss_function(p, pi, R1, self.tau1, self.epsilon1)
-        loss_p2 = lambda p, pi: self.loss_function(p, pi, R2, self.tau2, self.epsilon2)
-        pgd = ProjectedGradientDescent(lr=self.lr, projection=self.projection)
+        loss_p1 = lambda p, pi1, pi2: self.loss_function(
+            p, pi1, pi2, R1, self.tau1, self.epsilon1
+        )
+        loss_p2 = lambda p, pi1, pi2: self.loss_function(
+            p, pi1, pi2, R2, self.tau2, self.epsilon2
+        )
+        pgd = ProjectedGradientDescent(
+            lr=self.lr,
+            projection=self.projection,
+        )
 
         for _ in range(self.max_iter):
             grads = np.zeros_like(players)
 
-            grads[0], grads[1] = loss_p1(players[0], players[1])
-            grads[2], grads[3] = loss_p2(players[2], players[3])
+            grads[1], grads[0] = loss_p1(players[0], players[1], players[2])
+            grads[3], grads[2] = loss_p2(players[2], players[3], players[0])
+
             players = pgd.step(players, grads)
 
+            players = np.clip(players, 1e-8, 1 - 1e-8)
         return players
 
     @staticmethod
