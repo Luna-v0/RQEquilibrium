@@ -2,8 +2,16 @@
 from dataclasses import dataclass
 from typing import Callable, Union
 
+import matplotlib
+
+matplotlib.use(
+    "module://matplotlib-backend-kitty"
+)  # Use TkAgg backend for interactive plots
+
+
 from autograd import grad
 from autograd import numpy as np
+from matplotlib import pyplot as plt
 
 from opt import (
     ProjectedGradientDescent,
@@ -62,63 +70,92 @@ class RQE:
         self.grad_risk = grad(self.risk_function)
         self.grad_quantal = grad(self.quantal_function)
 
-    def loss_function(
-        self,
-        p: np.ndarray,
-        pi1: np.ndarray,
-        pi2: np.ndarray,
-        R: np.ndarray,
-        tau: float,
-        epsilon: float,
-    ) -> tuple[float, float]:
+    def quantal_term(
+        self, game: np.ndarray, p: np.ndarray, x: np.ndarray, epsilon: float
+    ) -> float:
         """
-        Compute the loss function for a given policy p and reward matrix R.
+        Compute the quantal term for a given game matrix, policy, and epsilon.
         """
+        return -game @ p + epsilon * self.grad_quantal(x)
 
-        risk_term = R.T @ p + (1 / tau) * self.grad_risk(pi1, pi2)
-        quantal_term = -R @ pi1 + epsilon * self.grad_quantal(p)
-        return risk_term, quantal_term
+    def risk_term(
+        self, game: np.ndarray, p: np.ndarray, x: np.ndarray, y: np.ndarray, tau: float
+    ) -> float:
+        """
+        Compute the risk term for a given game matrix, policy, and epsilon.
+        """
+        return game.T @ x + (1 / tau) * self.grad_risk(p, y)
+
+    def utility(
+        self, game: np.ndarray, p: np.ndarray, x: np.ndarray, y: np.ndarray, tau: float
+    ) -> float:
+        """
+        Compute the utility for a player given their policy and the opponent's policy.
+        """
+        return -x.T.dot(game).dot(p) - (1 / tau) * self.risk_function(y, p)
 
     def optimize(self) -> np.ndarray:
         """
         Optimize the policies for both players using projected gradient descent.
         """
 
-        players = np.random.rand(4, 2)
-        players /= np.sum(players, axis=1, keepdims=True)
+        (n, m) = self.players[0].game_matrix.shape
 
-        loss_p1 = lambda p, pi1, pi2: self.loss_function(
-            p,
-            pi1,
-            pi2,
-            self.players[0].game_matrix,
-            self.players[0].tau,
-            self.players[0].epsilon,
-        )
-        loss_p2 = lambda p, pi1, pi2: self.loss_function(
-            p,
-            pi1,
-            pi2,
-            self.players[1].game_matrix.T,
-            self.players[1].tau,
-            self.players[1].epsilon,
-        )
+        x = self.projection(np.ones([n, 1]))
+        y = self.projection(np.ones([m, 1]))
+        px = self.projection(np.ones([n, 1]))
+        py = self.projection(np.ones([m, 1]))
+
         pgd = ProjectedGradientDescent(
             lr=self.lr,
             projection=self.projection,
         )
 
-        for _ in range(self.max_iter):
-            grads = np.zeros_like(players)
+        payoffs = []
+        lasts = [0 for _ in range(len(self.players))]
+        lasti = 100
 
-            grads[1], grads[0] = loss_p1(players[0], players[1], players[2])
-            grads[3], grads[2] = loss_p2(players[2], players[3], players[0])
+        for t in range(self.max_iter):
 
-            players = pgd.step(players, grads)
+            quantal_x = self.quantal_term(
+                self.players[0].game_matrix, px, x, self.players[0].epsilon
+            )
+            risk_x = self.risk_term(
+                self.players[0].game_matrix, px, x, y, self.players[0].tau
+            )
+            quantal_y = self.quantal_term(
+                self.players[1].game_matrix, py, y, self.players[1].epsilon
+            )
+            risk_y = self.risk_term(
+                self.players[1].game_matrix, py, y, x, self.players[1].tau
+            )
 
-            players = np.clip(players, 1e-8, 1 - 1e-8)
+            x = pgd.step(x, quantal_x)
+            px = pgd.step(px, risk_x)
+            y = pgd.step(y, quantal_y)
+            py = pgd.step(py, risk_y)
 
-        return players
+            print(x)
+            break
+            arr = [x, y]
+
+            utility_1 = self.utility(
+                self.players[0].game_matrix, px, x, y, self.players[0].tau
+            )
+            utility_2 = self.utility(
+                self.players[1].game_matrix, py, y, x, self.players[1].tau
+            )
+
+            payoffs.append((utility_1, utility_2))
+            diffs = [arr[i] - lasts[i] for i in range(len(arr))]
+            lasts = [arr[i] for i in range(len(arr))]
+
+        payoffs_values = [np.mean(payoff[-lasti:]) for payoff in payoffs]
+
+        # plt.plot([p[0] for p in payoffs], label="Player 1 Payoff")
+        # plt.pause(0.1)
+        return x, y, x, y
+        return payoffs_values[0], payoffs_values[1], x, y
 
     @staticmethod
     def print_game(R1: np.ndarray, R2: np.ndarray):
@@ -134,30 +171,45 @@ class RQE:
 
 if __name__ == "__main__":
     # Example usage
-    R1 = np.array([[3, 0], [5, 1]])
-    R2 = np.array([[3, 5], [0, 1]])
+    R1 = np.array([[200, 160], [370, 10]])
+    R2 = np.array([[160, 10], [200, 370]])
     RQE.print_game(R1, R2)
     players = [
-        Player(tau=0.005, epsilon=200, game_matrix=R1),
-        Player(tau=0.005, epsilon=200, game_matrix=R2),
+        Player(tau=0.001, epsilon=170, game_matrix=R1),
+        Player(tau=0.06, epsilon=110, game_matrix=R2),
     ]
     rqe_solver = RQE(players=players, lr=0.01, max_iter=1000, br_iters=50)
-    x = rqe_solver.optimize()
-    print(x)
-
-    raise ""
-    print("Computed policies for RQE")
-    # print("Player 1:", np.argmax(pi1), "with policy:", pi1)
+    p1, p2, pi1, pi2 = rqe_solver.optimize()
+    print("Computed policies for RQE:")
     print(f"Player 1: Best Action {np.argmax(pi1)} with policy: {pi1}")
-    # print("Player 2:", np.argmax(pi2), "with policy:", pi2)
     print(f"Player 2: Best Action {np.argmax(pi2)} with policy: {pi2}")
+
+    print("Payoffs:")
+    print(f"Player 1: {p1}, Player 2: {p2}")
+
+    print(f"Expected pi_1 pi_2 strategies: {np.array([[0.47, 0.53], [0.65, 0.35]])}")
 
     import nashpy as nash
 
     game = nash.Game(R1, R2)
     equilibrium = game.support_enumeration()
     print("Nash Equilibrium using nashpy:")
-
     for eq in equilibrium:
         print(f"Player 1: Best Action {np.argmax(eq[0])} with policy: {eq[0]}")
         print(f"Player 2: Best Action {np.argmax(eq[1])} with policy: {eq[1]}")
+
+# print("Computed policies for RQE")
+# # print("Player 1:", np.argmax(pi1), "with policy:", pi1)
+# print(f"Player 1: Best Action {np.argmax(pi1)} with policy: {pi1}")
+# # print("Player 2:", np.argmax(pi2), "with policy:", pi2)
+# print(f"Player 2: Best Action {np.argmax(pi2)} with policy: {pi2}")
+
+# import nashpy as nash
+
+# game = nash.Game(R1, R2)
+# equilibrium = game.support_enumeration()
+# print("Nash Equilibrium using nashpy:")
+
+# for eq in equilibrium:
+#     print(f"Player 1: Best Action {np.argmax(eq[0])} with policy: {eq[0]}")
+#     print(f"Player 2: Best Action {np.argmax(eq[1])} with policy: {eq[1]}")

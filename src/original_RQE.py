@@ -82,6 +82,9 @@ def solve_game(M1, M2, tau, eps, tau2, eps2, T, gamma=0.1, show=False, tol=1e-4)
             -y.T.dot(M2).dot(py)
             - 1 / tau2 * (np.sum(x * np.log((x + delta) / (py + delta))))
         )
+
+        print("p ", payoffs1[-1])
+
         strats1[:, t] = x[:]
         strats2[:, t] = y[:]
         diff1 = np.abs(x - lastx)
@@ -102,6 +105,7 @@ def solve_game(M1, M2, tau, eps, tau2, eps2, T, gamma=0.1, show=False, tol=1e-4)
     if show:
         plt.plot(payoffs1)
         plt.pause(0.1)
+
     return payoff1, payoff2, x, y
 
 
@@ -339,6 +343,11 @@ class MAGridWorld:
                 self.payoffs[1][0][s1, s2] = p2
                 self.policies[0][0][s1, s2, :] = pi1
                 self.policies[1][0][s1, s2, :] = pi2
+
+        print("Final Policies:")
+        print(self.policies)
+        print("Final Payoffs:")
+        print(self.payoffs)
         return
 
     def viewWorld(self, initial=None):
@@ -490,8 +499,8 @@ class MAGridWorld:
 
 
 ### Plot Configuration
-# m1 = MAGridWorld(Testworld, 15, [0.1, 0.1], [10, 10])
-# m1.qlearn(1000, 0.001, 1, 1e-5)
+m1 = MAGridWorld(Testworld, 15, [0.1, 0.1], [10, 10])
+m1.qlearn(1000, 0.001, 1, 1e-5)
 
 
 # m2=MAGridWorld(Testworld,15,[0.001,0.001],[10,10])
