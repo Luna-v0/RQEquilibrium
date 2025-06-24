@@ -67,7 +67,7 @@ class RQE:
         Compute the loss function for a given policy p and reward matrix R.
         """
 
-        risk_term = R.T @ pi + self.grad_risk(p, pi) / tau
+        risk_term = R @ pi + self.grad_risk(p, pi) / tau
         quantal_term = R @ p + self.grad_quantal(p) * epsilon
         return risk_term, quantal_term
 
@@ -85,20 +85,14 @@ class RQE:
         loss_p2 = lambda p, pi: self.loss_function(p, pi, R2, self.tau2, self.epsilon2)
         pgd = ProjectedGradientDescent(lr=self.lr, projection=self.projection)
 
-        players = np.array([pi1, pi2])
-        print("Players2", players)
-
         for _ in range(self.max_iter):
             grads = np.zeros_like(players)
 
-            grads[0], grads[1] = loss_p1(pi1, pi2)
-            grads[2], grads[3] = loss_p2(pi2, pi1)
-            print(f"Gradients: Player 1: {grad_p1}, Player 2: {grad_p2}")
-            pi1 = pgd.step(pi1, grad_p1)
-            pi2 = pgd.step(pi2, grad_p2)
-            break
+            grads[0], grads[1] = loss_p1(players[0], players[1])
+            grads[2], grads[3] = loss_p2(players[2], players[3])
+            players = pgd.step(players, grads)
 
-        return pi1, pi2
+        return players
 
     @staticmethod
     def print_game(R1: np.ndarray, R2: np.ndarray):
