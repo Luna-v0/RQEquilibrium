@@ -63,20 +63,20 @@ class RQE:
         self.grad_quantal = grad(self.quantal_function)
 
     def risk_term(
-        self, game: np.ndarray, p: np.ndarray, x: np.ndarray, y: np.ndarray, tau: float
+        self, game: np.ndarray, x: np.ndarray, p: np.ndarray, y: np.ndarray, tau: float
     ) -> float:
         """
         Compute the risk term for a player given the game matrix, policy, and other player's policy.
         """
-        return game.T @ p + (1 / tau) * self.grad_risk(x, y)
+        return game.T @ x + (1 / tau) * self.grad_risk(p, y)
 
     def quantal_term(
-        self, game: np.ndarray, p: np.ndarray, x: np.ndarray, epsilon: float
+        self, game: np.ndarray, x: np.ndarray, p: np.ndarray, epsilon: float
     ) -> float:
         """
         Compute the quantal response term for a player given the game matrix, policy and epsilon parameter.
         """
-        return -game @ x + epsilon * self.grad_quantal(p)
+        return -game @ p + epsilon * self.grad_quantal(x)
 
     def optimize(self) -> np.ndarray:
         """
@@ -99,7 +99,6 @@ class RQE:
         py = temp[3]
 
         for _ in range(self.max_iter):
-
             # Compute the quantal and risk terms for both players
             x_quantal = self.quantal_term(
                 self.players[0].game_matrix,
