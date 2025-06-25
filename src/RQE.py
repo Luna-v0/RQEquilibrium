@@ -65,68 +65,75 @@ class RQE:
     def risk_term(
         self, game: np.ndarray, p: np.ndarray, x: np.ndarray, y: np.ndarray, tau: float
     ) -> float:
+        """
+        Compute the risk term for a player given the game matrix, policy, and other player's policy.
+        """
         return game.T @ p + (1 / tau) * self.grad_risk(x, y)
 
     def quantal_term(
         self, game: np.ndarray, p: np.ndarray, x: np.ndarray, epsilon: float
     ) -> float:
+        """
+        Compute the quantal response term for a player given the game matrix, policy and epsilon parameter.
+        """
         return -game @ x + epsilon * self.grad_quantal(p)
 
     def optimize(self) -> np.ndarray:
         """
         Optimize the policies for both players using projected gradient descent.
         """
+        (n, m) = self.players[0].game_matrix.shape
 
-        players = np.random.rand(4, 2)
-        players /= np.sum(players, axis=1, keepdims=True)
-
+        # Initialize the Projected Gradient Descent optimizer
         pgd = ProjectedGradientDescent(
             lr=self.lr,
             projection=self.projection,
         )
 
-        x, y = np.array([-1, -1]), np.array([-1, -1])  # Initialize x and y
+        # Initialize random policies for both players
+        temp = np.random.rand(n * 2, m)
+        temp /= np.sum(temp, axis=1, keepdims=True)
+        x = temp[0]
+        y = temp[2]
+        px = temp[1]
+        py = temp[3]
 
         for _ in range(self.max_iter):
-            grads = np.zeros_like(players)
 
-            x = self.quantal_term(
+            # Compute the quantal and risk terms for both players
+            x_quantal = self.quantal_term(
                 self.players[0].game_matrix,
-                players[0],
-                players[1],
+                x,
+                px,
                 self.players[0].epsilon,
             )
-            px = self.risk_term(
+            x_risk = self.risk_term(
                 self.players[0].game_matrix,
-                players[0],
-                players[1],
-                players[2],
+                x,
+                px,
+                y,
                 self.players[0].tau,
             )
-            y = self.quantal_term(
+            y_quantal = self.quantal_term(
                 self.players[1].game_matrix.T,
-                players[2],
-                players[3],
+                y,
+                py,
                 self.players[1].epsilon,
             )
-            py = self.risk_term(
+            y_risk = self.risk_term(
                 self.players[1].game_matrix.T,
-                players[2],
-                players[3],
-                players[0],
+                y,
+                py,
+                x,
                 self.players[1].tau,
             )
+            # Update the policies using projected gradient descent
+            x = pgd.step(x, x_quantal)
+            y = pgd.step(y, y_quantal)
+            px = pgd.step(px, x_risk)
+            py = pgd.step(py, y_risk)
 
-            grads[0] = x
-            grads[1] = px
-            grads[2] = y
-            grads[3] = py
-            # Update players using projected gradient descent
-            players = pgd.step(players, grads)
-            players = np.clip(players, 1e-8, 1 - 1e-8)
-
-        x = players[0]
-        y = players[2]
+        # Return the optimized policies for both players
         return np.array([x, y])
 
     @staticmethod
