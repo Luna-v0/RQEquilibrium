@@ -5,7 +5,7 @@ from typing import Callable, Union
 from autograd import grad
 from autograd import numpy as np
 
-from .opt import (
+from opt import (
     ProjectedGradientDescent,
     kl_divergence,
     kl_reversed,
@@ -85,6 +85,8 @@ class RQE:
             projection=self.projection,
         )
 
+        x, y = np.array([-1, -1]), np.array([-1, -1])  # Initialize x and y
+
         for _ in range(self.max_iter):
             grads = np.zeros_like(players)
 
@@ -119,12 +121,13 @@ class RQE:
             grads[1] = px
             grads[2] = y
             grads[3] = py
-
+            # Update players using projected gradient descent
             players = pgd.step(players, grads)
-
             players = np.clip(players, 1e-8, 1 - 1e-8)
 
-        return players
+        x = players[0]
+        y = players[2]
+        return np.array([x, y])
 
     @staticmethod
     def print_game(R1: np.ndarray, R2: np.ndarray):
@@ -140,18 +143,18 @@ class RQE:
 
 if __name__ == "__main__":
     # Example usage
-    R1 = np.array([[3, 0], [5, 1]])
-    R2 = np.array([[3, 5], [0, 1]])
+    R1 = np.array([[200, 160], [370, 10]])
+    R2 = np.array([[160, 10], [200, 370]])
     RQE.print_game(R1, R2)
     players = [
-        Player(tau=0.005, epsilon=200, game_matrix=R1),
-        Player(tau=0.005, epsilon=200, game_matrix=R2),
+        Player(tau=0.001, epsilon=170, game_matrix=R1),
+        Player(tau=0.06, epsilon=110, game_matrix=R2),
     ]
-    rqe_solver = RQE(players=players, lr=0.01, max_iter=1000, br_iters=50)
+    rqe_solver = RQE(players=players, lr=1e-4, max_iter=1000, br_iters=50)
     x = rqe_solver.optimize()
-    print(x)
+    pi1 = x[0]
+    pi2 = x[1]
 
-    raise ""
     print("Computed policies for RQE")
     # print("Player 1:", np.argmax(pi1), "with policy:", pi1)
     print(f"Player 1: Best Action {np.argmax(pi1)} with policy: {pi1}")
