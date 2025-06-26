@@ -56,6 +56,9 @@ def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the KL divergence between two probability distributions p and q.
     """
+    if q.ndim > 1:
+        return np.sum([kl_divergence(p, q_i) for q_i in q])
+
     return np.sum(p * (np.log(p) - np.log(q)))
 
 
