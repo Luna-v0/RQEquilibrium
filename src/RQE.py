@@ -62,63 +62,68 @@ class RQE:
         self.grad_risk = grad(self.risk_function)
         self.grad_quantal = grad(self.quantal_function)
 
-    def loss_function(
-        self,
-        p: np.ndarray,
-        pi1: np.ndarray,
-        pi2: np.ndarray,
-        R: np.ndarray,
-        tau: float,
-        epsilon: float,
-    ) -> tuple[float, float]:
+    def risk_term(
+        self, game: np.ndarray, x: np.ndarray, p: np.ndarray, y: np.ndarray, tau: float
+    ) -> np.array:
         """
-        Compute the loss function for a given policy p and reward matrix R.
+        Compute the risk term for a player given the game matrix, policy, and other player's policy.
         """
+        return game.T @ x + (1 / tau) * self.grad_risk(p, y)
 
-        risk_term = R.T @ p + (1 / tau) * self.grad_risk(pi1, pi2)
-        quantal_term = -R @ pi1 + epsilon * self.grad_quantal(p)
-        return risk_term, quantal_term
+    def quantal_term(
+        self, game: np.ndarray, x: np.ndarray, p: np.ndarray, epsilon: float
+    ) -> np.array:
+        """
+        Compute the quantal response term for a player given the game matrix, policy and epsilon parameter.
+        """
+        return -game @ p + epsilon * self.grad_quantal(x)
 
     def optimize(self) -> np.ndarray:
         """
         Optimize the policies for both players using projected gradient descent.
         """
 
-        players = np.random.rand(4, 2)
-        players /= np.sum(players, axis=1, keepdims=True)
+        num_players = len(self.players)  # Number of players
+        max_action_set = max(player.game_matrix.shape[1] for player in self.players)
 
-        loss_p1 = lambda p, pi1, pi2: self.loss_function(
-            p,
-            pi1,
-            pi2,
-            self.players[0].game_matrix,
-            self.players[0].tau,
-            self.players[0].epsilon,
-        )
-        loss_p2 = lambda p, pi1, pi2: self.loss_function(
-            p,
-            pi1,
-            pi2,
-            self.players[1].game_matrix.T,
-            self.players[1].tau,
-            self.players[1].epsilon,
-        )
+        # Initialize the Projected Gradient Descent optimizer
         pgd = ProjectedGradientDescent(
             lr=self.lr,
             projection=self.projection,
         )
 
+        # Initialize random policies for both players
+        policies = np.random.rand(num_players, max_action_set)
+        risk_policies = np.random.rand(num_players, max_action_set)
+        policies /= np.sum(policies, axis=1, keepdims=True)
+        risk_policies /= np.sum(risk_policies, axis=1, keepdims=True)
+
+        print("Pol Shape:", policies.shape)
+
         for _ in range(self.max_iter):
-            grads = np.zeros_like(players)
+            # Compute the quantal and risk terms for both players
+            policies_buff = policies.copy()
+            risk_buff = risk_policies.copy()
+            for i, player in enumerate(self.players):
+                game = player.game_matrix if i % 2 == 0 else player.game_matrix.T
 
-            grads[1], grads[0] = loss_p1(players[0], players[1], players[2])
-            grads[3], grads[2] = loss_p2(players[2], players[3], players[0])
+                quantal_grad = self.quantal_term(
+                    game, policies_buff[i], risk_buff[i], player.epsilon
+                )
+                opponnet_policies = np.delete(policies_buff, i, axis=0)
 
-            players = pgd.step(players, grads)
+                risk_grad = self.risk_term(
+                    game,
+                    policies_buff[i],
+                    risk_buff[i],
+                    opponnet_policies,
+                    player.tau,
+                )
 
-            players = np.clip(players, 1e-8, 1 - 1e-8)
+                policies[i] = pgd.step(policies_buff[i], quantal_grad)
+                risk_policies[i] = pgd.step(risk_buff[i], risk_grad)
 
-        return players
+        return policies
 
     @staticmethod
     def print_game(R1: np.ndarray, R2: np.ndarray):
@@ -134,30 +139,22 @@ class RQE:
 
 if __name__ == "__main__":
     # Example usage
-    R1 = np.array([[3, 0], [5, 1]])
-    R2 = np.array([[3, 5], [0, 1]])
+    R1 = np.array([[200, 160], [370, 10]])
+    R2 = np.array([[160, 10], [200, 370]])
+    R3 = R1.copy()
+    R4 = R2.copy()
     RQE.print_game(R1, R2)
     players = [
-        Player(tau=0.005, epsilon=200, game_matrix=R1),
-        Player(tau=0.005, epsilon=200, game_matrix=R2),
+        Player(tau=0.001, epsilon=170, game_matrix=R1),
+        Player(tau=0.06, epsilon=110, game_matrix=R2),
+        Player(tau=0.003, epsilon=190, game_matrix=R3),
+        Player(tau=0.05, epsilon=130, game_matrix=R4),
     ]
-    rqe_solver = RQE(players=players, lr=0.01, max_iter=1000, br_iters=50)
-    x = rqe_solver.optimize()
-    print(x)
+    rqe_solver = RQE(players=players, lr=1e-4, max_iter=1000, br_iters=50)
 
-    raise ""
     print("Computed policies for RQE")
     # print("Player 1:", np.argmax(pi1), "with policy:", pi1)
-    print(f"Player 1: Best Action {np.argmax(pi1)} with policy: {pi1}")
-    # print("Player 2:", np.argmax(pi2), "with policy:", pi2)
-    print(f"Player 2: Best Action {np.argmax(pi2)} with policy: {pi2}")
-
-    import nashpy as nash
-
-    game = nash.Game(R1, R2)
-    equilibrium = game.support_enumeration()
-    print("Nash Equilibrium using nashpy:")
-
-    for eq in equilibrium:
-        print(f"Player 1: Best Action {np.argmax(eq[0])} with policy: {eq[0]}")
-        print(f"Player 2: Best Action {np.argmax(eq[1])} with policy: {eq[1]}")
+    i = 0
+    for pi in rqe_solver.optimize():
+        print(f"Player {i + 1}: Best Action {np.argmax(pi)} with policy: {pi}")
+        i += 1

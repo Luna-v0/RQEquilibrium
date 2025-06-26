@@ -30,7 +30,7 @@ class ProjectedGradientDescent:
         Returns:
             np.ndarray: The updated point after one step.
         """
-        return self.projection(w - self.lr * gradients_values)
+        return np.clip(self.projection(w - self.lr * gradients_values), 1e-8, 1 - 1e-8)
 
 
 def project_simplex(x: np.ndarray) -> np.ndarray:
@@ -56,6 +56,9 @@ def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the KL divergence between two probability distributions p and q.
     """
+    if q.ndim > 1:
+        return np.sum([kl_divergence(p, q_i) for q_i in q])
+
     return np.sum(p * (np.log(p) - np.log(q)))
 
 
