@@ -13,3 +13,8 @@ dependencies = [
     "scipy>=1.15.3",
     "seaborn>=0.13.2",
 ]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+]
