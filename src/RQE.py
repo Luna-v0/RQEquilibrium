@@ -17,12 +17,43 @@ from opt import (
 
 @dataclass
 class Player:
+    """
+    Concept of a player in the RQE game.
+
+    Attributes:
+        tau: Risk aversion parameter.
+        epsilon: Bounded Rational parameter.
+        game_matrix: The payoff matrix for the player.
+    """
+
     tau: float
     epsilon: float
     game_matrix: np.ndarray
 
 
 class RQE:
+    """
+    RQE (Risk Quantal Response Equilibrium) solver for multi-player games.
+
+    This class implements the RQE solution concept, which combines risk aversion and bounded rationality
+    in a multi-player setting. It uses projected gradient descent to optimize the policies of players.
+
+    Attributes:
+        players: List of Player objects representing the players in the game.
+        lr: Learning rate for the optimization.
+        max_iter: Maximum number of iterations for the optimization.
+        br_iters: Number of iterations for bounded rationality.
+        quantal_function: Function to compute the quantal response.
+        risk_function: Function to compute the risk term.
+        projection: Function to project policies onto a simplex.
+
+    Methods:
+        risk_term: Computes the risk term for a player given the game matrix, policy, and other player's policy.
+        quantal_term: Computes the quantal response term for a player given the game matrix, policy, and epsilon parameter.
+        optimize: Optimizes the policies for all players using projected gradient descent.
+        print_game: Prints the game matrices for two player games.
+    """
+
     quantal_function: Callable
     risk_function: Callable
 
@@ -67,6 +98,12 @@ class RQE:
     ) -> np.array:
         """
         Compute the risk term for a player given the game matrix, policy, and other player's policy.
+
+        Parameters:
+            game: The game matrix for the player.
+            x: The current policy of the player.
+            p: The last risk aversion term.
+            y: The policy of all the other players.
         """
         return game.T @ x + (1 / tau) * self.grad_risk(p, y)
 
@@ -75,6 +112,11 @@ class RQE:
     ) -> np.array:
         """
         Compute the quantal response term for a player given the game matrix, policy and epsilon parameter.
+        Parameters:
+            game: The game matrix for the player.
+            x: The current policy of the player.
+            p: The risk aversion term.
+            epsilon: The epsilon parameter for bounded rationality.
         """
         return -game @ p + epsilon * self.grad_quantal(x)
 
@@ -97,8 +139,6 @@ class RQE:
         risk_policies = np.random.rand(num_players, max_action_set)
         policies /= np.sum(policies, axis=1, keepdims=True)
         risk_policies /= np.sum(risk_policies, axis=1, keepdims=True)
-
-        print("Pol Shape:", policies.shape)
 
         for _ in range(self.max_iter):
             # Compute the quantal and risk terms for both players
