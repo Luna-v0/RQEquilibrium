@@ -6,7 +6,7 @@ import pyspiel
 game = pyspiel.load_game("battleship")
 state = game.new_initial_state()
 print(game.get_type().information.name)
-
+print(game.max_game_length())
 # help(game.get_type().information)
 # help(game)
 
