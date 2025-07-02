@@ -1,8 +1,14 @@
+import matplotlib
+
+matplotlib.use("module://matplotlib-backend-kitty")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.patches import ArrowStyle, Circle, FancyArrowPatch, Rectangle
 from matplotlib.path import Path
+
+from RQE import RQE, Player
 
 colors = sns.color_palette("deep", 10)
 colors2 = sns.color_palette("RdGy", 10)[6]
@@ -99,9 +105,27 @@ def solve_game(M1, M2, tau, eps, tau2, eps2, T, gamma=0.1, show=False, tol=1e-4)
     payoff2 = np.mean(payoffs2[-lasti:])
     strat1 = np.mean(strats1, axis=1)
     strat2 = np.mean(strats2, axis=1)
+    show = False
     if show:
         plt.plot(payoffs1)
         plt.pause(0.1)
+
+    eq = RQE(
+        [
+            Player(game_matrix=M1, tau=tau, epsilon=eps),
+            Player(game_matrix=M2, tau=tau2, epsilon=eps2),
+        ],
+        lr=gamma,
+        max_iter=T,
+        br_iters=100,
+        quantal_function="log_barrier",
+        risk_function="kl_divergence",
+    )
+    pi1_we, pi2_we = eq.optimize()
+
+    print("Payoff1: ", np.abs(pi1_we - x) > 0.1)
+    print("Payoff2: ", np.abs(pi2_we - y) > 0.1)
+
     return payoff1, payoff2, x, y
 
 
@@ -490,8 +514,8 @@ class MAGridWorld:
 
 
 ### Plot Configuration
-# m1 = MAGridWorld(Testworld, 15, [0.1, 0.1], [10, 10])
-# m1.qlearn(1000, 0.001, 1, 1e-5)
+m1 = MAGridWorld(Testworld, 15, [0.1, 0.1], [10, 10])
+m1.qlearn(1000, 0.001, 1, 1e-5)
 
 
 # m2=MAGridWorld(Testworld,15,[0.001,0.001],[10,10])

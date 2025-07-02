@@ -2,6 +2,7 @@ from typing import Callable
 
 from autograd import grad
 from autograd import numpy as np
+from matplotlib.pyplot import waitforbuttonpress
 
 
 class ProjectedGradientDescent:
@@ -30,7 +31,9 @@ class ProjectedGradientDescent:
         Returns:
             np.ndarray: The updated point after one step.
         """
-        return np.clip(self.projection(w - self.lr * gradients_values), 1e-8, 1 - 1e-8)
+        return np.clip(
+            self.projection(w - self.lr * gradients_values), 1e-12, 1 - 1e-12
+        )
 
 
 def project_simplex(x: np.ndarray) -> np.ndarray:
@@ -59,7 +62,7 @@ def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
     if q.ndim > 1:
         return np.sum([kl_divergence(p, q_i) for q_i in q])
 
-    return np.sum(p * (np.log(p) - np.log(q)))
+    return p * (np.log(p / q))
 
 
 def kl_reversed(p: np.ndarray, q: np.ndarray) -> float:
@@ -74,11 +77,11 @@ def negative_entropy(p: np.ndarray) -> float:
     """
     Compute the negative entropy of a probability distribution p.
     """
-    return -np.sum(p * np.log(p))
+    return -p * np.log(p)
 
 
 def log_barrier(p: np.ndarray) -> float:
     """
     Compute the log barrier function for a probability distribution p.
     """
-    return -np.sum(np.log(p))
+    return -1 * np.log(p)
