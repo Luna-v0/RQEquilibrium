@@ -1,0 +1,110 @@
+,id,name,min_n_players,max_n_players,type,is_deterministic
+0,2048,2048,1,1,perfect_information,False
+1,add_noise,Add noise to terminal utilities.,1,100,imperfect_information,False
+2,amazons,Amazons,2,2,perfect_information,True
+3,backgammon,Backgammon,2,2,perfect_information,False
+4,bargaining,Bargaining,2,2,imperfect_information,False
+5,battleship,Battleship,2,2,imperfect_information,True
+6,blackjack,Blackjack,1,1,imperfect_information,False
+7,blotto,Blotto,2,10,one_shot,True
+8,breakthrough,Breakthrough,2,2,perfect_information,True
+9,bridge,Contract Bridge,4,4,imperfect_information,False
+10,bridge_uncontested_bidding,Bridge: Uncontested Bidding,2,2,imperfect_information,False
+11,cached_tree,Cached Tree Game Transform,1,100,imperfect_information,False
+12,catch,Catch,1,1,perfect_information,False
+13,checkers,Checkers,2,2,perfect_information,True
+14,chess,Chess,2,2,perfect_information,True
+15,cliff_walking,CliffWalking,1,1,perfect_information,True
+16,clobber,Clobber,2,2,perfect_information,True
+17,coin_game,The Coin Game,1,10,imperfect_information,False
+18,colored_trails,Colored Trails,3,3,imperfect_information,False
+19,connect_four,Connect Four,2,2,perfect_information,True
+20,coop_box_pushing,Cooperative Box Pushing,2,2,imperfect_information,False
+21,coop_to_1p,Cooperative Game As Single-Player,1,1,imperfect_information,False
+22,coordinated_mp,Coordinated Matching Pennies,2,2,imperfect_information,False
+23,crazy_eights,Crazy Eights,2,15,imperfect_information,False
+24,cribbage,Cribbage,2,4,imperfect_information,False
+25,cursor_go,Cursor Go,2,2,perfect_information,True
+26,dark_chess,Dark Chess,2,2,imperfect_information,True
+27,dark_hex,Dark Hex,2,2,imperfect_information,True
+28,dark_hex_ir,Dark Hex with Imperfect Recall,2,2,imperfect_information,True
+29,deep_sea,DeepSea,1,1,imperfect_information,True
+30,dots_and_boxes,Dots and Boxes,2,2,perfect_information,True
+31,dou_dizhu,Dou Dizhu,3,3,imperfect_information,False
+32,efg_game,efg_game,2,2,perfect_information,True
+33,einstein_wurfelt_nicht,einstein_wurfelt_nicht,2,2,perfect_information,False
+34,euchre,Euchre,4,4,imperfect_information,False
+35,first_sealed_auction,First-Price Sealed-Bid Auction,2,10,imperfect_information,False
+36,gin_rummy,Gin Rummy,2,2,imperfect_information,False
+37,go,Go,2,2,perfect_information,True
+38,goofspiel,Goofspiel,2,10,perfect_information,False
+39,hanabi,Hanabi,2,5,imperfect_information,False
+40,havannah,Havannah,2,2,perfect_information,True
+41,hearts,Hearts,4,4,imperfect_information,False
+42,hex,Hex,2,2,perfect_information,True
+43,hive,Hive,2,2,perfect_information,True
+44,kriegspiel,Kriegspiel,2,2,imperfect_information,True
+45,kuhn_poker,Kuhn Poker,2,10,imperfect_information,False
+46,laser_tag,Laser Tag,2,2,perfect_information,False
+47,leduc_poker,Leduc Poker,2,10,imperfect_information,False
+48,lewis_signaling,Lewis Signaling Game,2,2,imperfect_information,False
+49,liars_dice,Liars Dice,2,2,imperfect_information,False
+50,liars_dice_ir,Liars Dice with Imperfect Recall,2,2,imperfect_information,False
+51,maedn,Mensch-Aergere-Dich-Nicht,2,4,perfect_information,False
+52,mancala,Mancala,2,2,perfect_information,True
+53,markov_soccer,Markov Soccer,2,2,perfect_information,False
+54,matching_pennies_3p,Three-Player Matching Pennies,3,3,one_shot,True
+55,matrix_bos,Bach or Stravinsky,2,2,one_shot,True
+56,matrix_brps,"Biased Rock, Paper, Scissors",2,2,one_shot,True
+57,matrix_cd,Chicken-Dare,2,2,one_shot,True
+58,matrix_coordination,Coordination,2,2,one_shot,True
+59,matrix_mp,Matching Pennies,2,2,one_shot,True
+60,matrix_pd,Prisoner's Dilemma,2,2,one_shot,True
+61,matrix_rps,"Rock, Paper, Scissors",2,2,one_shot,True
+62,matrix_rpsw,"Rock, Paper, Scissors, Water",2,2,one_shot,True
+63,matrix_sh,Stag Hunt,2,2,one_shot,True
+64,matrix_shapleys_game,Shapley's Game,2,2,one_shot,True
+65,mfg_crowd_modelling,Mean Field Crowd Modelling,1,1,perfect_information,False
+66,mfg_crowd_modelling_2d,Mean Field Crowd Modelling 2D,1,1,perfect_information,False
+67,mfg_dynamic_routing,Cpp Mean Field Dynamic Routing,1,1,perfect_information,False
+68,mfg_garnet,Mean Field Garnet,1,1,perfect_information,False
+69,misere,Misere Version of a Regular Game,1,100,imperfect_information,False
+70,mnk,"m,n,k-game",2,2,perfect_information,True
+71,morpion_solitaire,Morpion Solitaire,1,1,perfect_information,True
+72,negotiation,Negotiation,2,2,imperfect_information,False
+73,nfg_game,nfg_game,2,100,one_shot,True
+74,nim,Nim,2,2,perfect_information,True
+75,nine_mens_morris,Nine men's morris,2,2,perfect_information,True
+76,normal_form_extensive_game,Normal-Form Version of an Extensive Game,1,100,one_shot,True
+77,oh_hell,Oh Hell!,3,7,imperfect_information,False
+78,oshi_zumo,Oshi Zumo,2,2,perfect_information,True
+79,othello,Othello,2,2,perfect_information,True
+80,oware,Oware,2,2,perfect_information,True
+81,pathfinding,Pathfinding,1,10,perfect_information,False
+82,pentago,Pentago,2,2,perfect_information,True
+83,phantom_go,Phantom Go,2,2,imperfect_information,True
+84,phantom_ttt,Phantom Tic Tac Toe,2,2,imperfect_information,True
+85,phantom_ttt_ir,Phantom Tic Tac Toe with Imperfect Recall,2,2,imperfect_information,True
+86,pig,Pig,2,10,perfect_information,False
+87,quoridor,Quoridor,2,4,perfect_information,True
+88,rbc,Reconnaisance Blind Chess,2,2,imperfect_information,True
+89,repeated_game,Repeated Normal-Form Game,1,100,perfect_information,True
+90,restricted_nash_response,Restricted Nash Response Modification of a Game,1,100,imperfect_information,False
+91,sheriff,Sheriff,2,2,imperfect_information,True
+92,skat,Skat,3,3,imperfect_information,False
+93,solitaire,Klondike Solitaire,1,1,imperfect_information,False
+94,spades,Partnership Spades,4,4,imperfect_information,False
+95,start_at,Start at specified subgame of a regular game.,1,100,imperfect_information,False
+96,stones_and_gems,Stones and Gems,1,1,perfect_information,False
+97,tarok,Slovenian Tarok,3,4,imperfect_information,False
+98,tic_tac_toe,Tic Tac Toe,2,2,perfect_information,True
+99,tiny_bridge_2p,Tiny Bridge (Uncontested),2,2,imperfect_information,False
+100,tiny_bridge_4p,Tiny Bridge (Contested),4,4,imperfect_information,False
+101,tiny_hanabi,Tiny Hanabi,2,10,imperfect_information,False
+102,trade_comm,Trading and Communication,2,2,imperfect_information,False
+103,turn_based_simultaneous_game,Turn-Based Version of a Simultaneous-Move Game,1,100,imperfect_information,False
+104,twixt,TwixT,2,2,perfect_information,True
+105,ultimate_tic_tac_toe,Ultimate Tic-Tac-Toe,2,2,perfect_information,True
+106,universal_poker,Universal Poker,2,10,imperfect_information,False
+107,y,Y Connection Game,2,2,perfect_information,True
+108,zerosum,ZeroSum Version of a Regular Game,1,100,imperfect_information,False
