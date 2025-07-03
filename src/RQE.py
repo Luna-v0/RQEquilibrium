@@ -33,26 +33,6 @@ class Player:
     game_matrix: np.ndarray
 
 
-def gradient_log_barrier(x):
-    # log_barrier(x) = -np.log(x)
-    return -1 / x
-
-
-def gradient_KL(p, q):
-    # KL(p, q) = p * np.log(p / q)
-    return np.log(p / q) + 1
-
-
-def gradient_entropy(x):
-    # entropy(x) = x * np.log(x)
-    return np.log(x) + 1
-
-
-def gradient_reverse_KL(p, q):
-    # reverse KL: KL(q, p) = q * np.log(q / p)
-    return -q / p
-
-
 class RQE:
     """
     RQE (Risk Quantal Response Equilibrium) solver for multi-player games.
@@ -112,8 +92,8 @@ class RQE:
         elif risk_function == "kl_reversed":
             self.risk_function = kl_reversed
 
-        self.grad_risk = gradient_KL
-        self.grad_quantal = gradient_log_barrier
+        self.grad_risk = grad(self.risk_function)
+        self.grad_quantal = grad(self.quantal_function)
 
     def risk_term(
         self, game: np.ndarray, x: np.ndarray, p: np.ndarray, y: np.ndarray, tau: float
