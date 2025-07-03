@@ -14,6 +14,8 @@ from opt import (
     project_simplex,
 )
 
+np.random.seed(73)  # For reproducibility
+
 
 @dataclass
 class Player:
@@ -29,6 +31,26 @@ class Player:
     tau: float
     epsilon: float
     game_matrix: np.ndarray
+
+
+def gradient_log_barrier(x):
+    # log_barrier(x) = -np.log(x)
+    return -1 / x
+
+
+def gradient_KL(p, q):
+    # KL(p, q) = p * np.log(p / q)
+    return np.log(p / q) + 1
+
+
+def gradient_entropy(x):
+    # entropy(x) = x * np.log(x)
+    return np.log(x) + 1
+
+
+def gradient_reverse_KL(p, q):
+    # reverse KL: KL(q, p) = q * np.log(q / p)
+    return -q / p
 
 
 class RQE:
@@ -90,8 +112,8 @@ class RQE:
         elif risk_function == "kl_reversed":
             self.risk_function = kl_reversed
 
-        self.grad_risk = grad(self.risk_function)
-        self.grad_quantal = grad(self.quantal_function)
+        self.grad_risk = gradient_KL
+        self.grad_quantal = gradient_log_barrier
 
     def risk_term(
         self, game: np.ndarray, x: np.ndarray, p: np.ndarray, y: np.ndarray, tau: float
@@ -145,7 +167,7 @@ class RQE:
             policies_buff = policies.copy()
             risk_buff = risk_policies.copy()
             for i, player in enumerate(self.players):
-                game = player.game_matrix if i % 2 == 0 else player.game_matrix.T
+                game = player.game_matrix if i % 2 == 0 else player.game_matrix
 
                 quantal_grad = self.quantal_term(
                     game, policies_buff[i], risk_buff[i], player.epsilon
@@ -156,12 +178,15 @@ class RQE:
                     game,
                     policies_buff[i],
                     risk_buff[i],
-                    opponnet_policies,
+                    opponnet_policies[0],
                     player.tau,
                 )
 
-                policies[i] = pgd.step(policies_buff[i], quantal_grad)
-                risk_policies[i] = pgd.step(risk_buff[i], risk_grad)
+                policies_buff[i] = pgd.step(policies[i], quantal_grad)
+                risk_buff[i] = pgd.step(risk_policies[i], risk_grad)
+
+            risk_policies = risk_buff
+            policies = policies_buff
 
         return policies
 

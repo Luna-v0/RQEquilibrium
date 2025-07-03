@@ -2,7 +2,6 @@ from typing import Callable
 
 from autograd import grad
 from autograd import numpy as np
-from matplotlib.pyplot import waitforbuttonpress
 
 
 class ProjectedGradientDescent:
@@ -31,28 +30,29 @@ class ProjectedGradientDescent:
         Returns:
             np.ndarray: The updated point after one step.
         """
-        return np.clip(
-            self.projection(w - self.lr * gradients_values), 1e-12, 1 - 1e-12
-        )
+
+        w -= self.lr * gradients_values
+        return self.projection(np.clip(w, 1e-12, 1 - 1e-12))
 
 
-def project_simplex(x: np.ndarray) -> np.ndarray:
-    """
-    Project a vector onto the simplex defined by the constraints that all elements are non-negative
-    and sum to 1.
-    """
-    if x.ndim != 1:
-        return np.vstack([project_simplex(xi) for xi in x])
-
-    if np.all(x >= 0) and np.isclose(np.sum(x), 1):
-        return x
-
-    n = len(x)
-    u = np.sort(x)[::-1]
+def project_simplex(v, s=1):
+    assert s > 0, "Radius s must be strictly positive (%d <= 0)" % s
+    v = np.reshape(v, (v.shape[0]))
+    (n,) = v.shape  # will raise ValueError if v is not 1-D
+    # check if we are already on the simplex
+    if v.sum() == s and np.all(v >= 0):
+        # best projection: itself!
+        return v
+    # get the array of cumulative sums of a sorted (decreasing) copy of v
+    u = np.sort(v)[::-1]
     cssv = np.cumsum(u)
-    rho = np.where(u > (cssv - 1) / np.arange(1, n + 1))[0][-1]
-    theta = (cssv[rho] - 1) / (rho + 1)
-    return np.maximum(x - theta, 0)
+    # get the number of > 0 components of the optimal solution
+    rho = np.nonzero(u * np.arange(1, n + 1) > (cssv - s))[0][-1]
+    # compute the Lagrange multiplier associated to the simplex constraint
+    theta = float(cssv[rho] - s) / (rho + 1)
+    # compute the projection by thresholding v using theta
+    w = (v - theta).clip(min=0)
+    return w
 
 
 def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
@@ -62,7 +62,7 @@ def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
     if q.ndim > 1:
         return np.sum([kl_divergence(p, q_i) for q_i in q])
 
-    return p * (np.log(p / q))
+    return np.sum(p * (np.log(p) - np.log(q)))
 
 
 def kl_reversed(p: np.ndarray, q: np.ndarray) -> float:
@@ -77,11 +77,11 @@ def negative_entropy(p: np.ndarray) -> float:
     """
     Compute the negative entropy of a probability distribution p.
     """
-    return -p * np.log(p)
+    return -np.sum(p * np.log(p))
 
 
 def log_barrier(p: np.ndarray) -> float:
     """
     Compute the log barrier function for a probability distribution p.
     """
-    return -1 * np.log(p)
+    return -np.sum(np.log(p))
