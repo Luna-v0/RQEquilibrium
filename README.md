@@ -16,3 +16,5 @@ url={https://openreview.net/forum?id=stUKwWBuBm}
 ```
 
 For more information, please refer to the [RQE documentation](https://google.com/).
+
+The original implementation of RQE by the authors is available at [kishanpb/Risk-Averse-Quantal-Equilibrium](https://github.com/kishanpb/Risk-averse-Quantal-Equilibria/tree/main)
