@@ -1,11 +1,10 @@
 # File for defining the RQE solution concept
 from dataclasses import dataclass
-from typing import Callable, Union
+from typing import Callable, List, Union
 
 from autograd import grad
 from autograd import numpy as np
-
-from .opt import (
+from opt import (
     ProjectedGradientDescent,
     kl_divergence,
     kl_reversed,
@@ -39,13 +38,11 @@ class RQE:
 
     This class implements the RQE solution concept, which combines risk aversion and bounded rationality
     in a multi-player setting. It uses projected gradient descent to optimize the policies of players.
-    It uses the aggregated risk method to compute the policies.
 
     Attributes:
-        players: List of Player objects representing the players in the game.
-        lr: Learning rate for the optimization.
-        max_iter: Maximum number of iterations for the optimization.
-        br_iters: Number of iterations for bounded rationality.
+        players (list[Player]): List of Player objects representing the players in the game.
+        lr (float): Learning rate for the optimization.
+        max_iter (int): Maximum number of iterations for the optimization.
         quantal_function: Function to compute the quantal response.
         risk_function: Function to compute the risk term.
         projection: Function to project policies onto a simplex.
@@ -59,13 +56,19 @@ class RQE:
 
     quantal_function: Callable
     risk_function: Callable
+    players: List[Player]
+    projection: Callable
+    lr: float
+    max_iter: int
+    br_iters: int
+    EPS: float = 1e-12
 
     def __init__(
         self,
-        players: list[Player],
-        lr=0.1,
-        max_iter=500,
-        br_iters=50,
+        players: List[Player],
+        lr: float = 0.1,
+        max_iter: int = 500,
+        br_iters: int = 50,
         quantal_function: Union[Callable, str] = "log_barrier",
         risk_function: Union[Callable, str] = "kl_divergence",
         projection: Callable = project_simplex,
@@ -102,14 +105,13 @@ class RQE:
         """
         Compute the risk term for a player given the game matrix, policy, and other player's policy.
 
-        Args:
+        Parameters:
             game: The game matrix for the player.
             x: The current policy of the player.
             p: The last risk aversion term.
             y: The policy of all the other players.
-            tau: The risk aversion parameter for the player.
         Returns:
-            np.array: The risk term for the player.
+            The gradient of the risk term
         """
         return game.T @ x + (1 / tau) * self.grad_risk(p, y)
 
@@ -118,22 +120,22 @@ class RQE:
     ) -> np.array:
         """
         Compute the quantal response term for a player given the game matrix, policy and epsilon parameter.
-        Args:
+        Parameters:
             game: The game matrix for the player.
             x: The current policy of the player.
             p: The risk aversion term.
             epsilon: The epsilon parameter for bounded rationality.
         Returns:
-            np.array: The quantal response term for the player.
+            The gradient of the quantal term
         """
         return -game @ p + epsilon * self.grad_quantal(x)
 
     def optimize(self) -> np.ndarray:
         """
         Optimize the policies for both players using projected gradient descent.
-        Uses the aggrated risk method.
+
         Returns:
-            np.ndarray: The optimized policies for all players.
+            The optimal policy using RQE
         """
 
         num_players = len(self.players)  # Number of players
@@ -182,7 +184,7 @@ class RQE:
     @staticmethod
     def print_game(R1: np.ndarray, R2: np.ndarray):
         """
-        Print the game matrices for a two player game.
+        Print the game matrices for both players.
         """
         for i in range(R1.shape[0]):
             row = []

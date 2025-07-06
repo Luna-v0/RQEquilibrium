@@ -31,7 +31,7 @@ class ProjectedGradientDescent:
         """
         Perform a single step of projected gradient descent.
 
-        Args:
+        Parameters:
             w (np.ndarray): The current point.
             gradients_values (np.ndarray): The computed gradients at the current point.
         Returns:
@@ -48,7 +48,7 @@ def project_simplex(v, s=1):
     The simplex is defined as the set of vectors x such that:
     x >= 0 and sum(x) = s.
 
-    Args:
+    Parameters:
         v (np.ndarray): The vector to be projected.
         s (float): The sum that the components of the projected vector should equal. Default is 1.
     Returns:
@@ -77,7 +77,7 @@ def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the KL divergence between two probability distributions p and q.
 
-    Args:
+    Parameters:
         p (np.ndarray): The first probability distribution.
         q (np.ndarray): The second probability distribution.
     Returns:
@@ -93,7 +93,7 @@ def kl_reversed(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the reversed KL divergence between two probability distributions p and q.
 
-    Args:
+    Parameters:
         p (np.ndarray): The first probability distribution.
         q (np.ndarray): The second probability distribution.
     Returns:
@@ -106,7 +106,7 @@ def kl_reversed(p: np.ndarray, q: np.ndarray) -> float:
 def negative_entropy(p: np.ndarray) -> float:
     """
     Compute the negative entropy of a probability distribution p.
-    Args:
+    Parameters:
         p (np.ndarray): The probability distribution.
     Returns:
         float: The negative entropy of the distribution.
@@ -117,7 +117,7 @@ def negative_entropy(p: np.ndarray) -> float:
 def log_barrier(p: np.ndarray) -> float:
     """
     Compute the log barrier function for a probability distribution p.
-    Args:
+    Parameters:
         p (np.ndarray): The probability distribution.
     Returns:
         float: The log barrier value for the distribution.

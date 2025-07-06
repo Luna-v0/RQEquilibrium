@@ -14,3 +14,5 @@ year={2025},
 url={https://openreview.net/forum?id=stUKwWBuBm}
 }
 ```
+
+For more information, please refer to the [RQE documentation](https://google.com/).

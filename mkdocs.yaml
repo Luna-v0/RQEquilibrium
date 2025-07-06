@@ -43,5 +43,5 @@ markdown_extensions:
 nav:
   - Home: index.md
   - API Reference:
-    - Validator: opt.py
-    - Chem: rqe.py
+    - opt: reference/opt.md
+    - rqe: reference/rqe.md

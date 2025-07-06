@@ -57,5 +57,6 @@ for pi in rqe_solver.optimize():
     * [x] Testing the n player games.
 - [ ] Adding more features.
     * [x] Working for n player games.
+    * [ ] Make it scikit-learn compatible.
     * [ ] Using JAX for faster computation on bigger games.
 
