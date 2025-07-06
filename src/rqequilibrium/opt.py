@@ -35,24 +35,28 @@ class ProjectedGradientDescent:
             w (np.ndarray): The current point.
             gradients_values (np.ndarray): The computed gradients at the current point.
         Returns:
-            np.ndarray: The updated point after one step.
+            The updated point after one step.
         """
 
         w -= self.lr * gradients_values
         return self.projection(np.clip(w, 1e-12, 1 - 1e-12))
 
 
-def project_simplex(v, s=1):
+def project_simplex(v: np.ndarray, s=1) -> np.ndarray:
     """
     Projects a vector v onto the simplex defined by the sum of its components being equal to s.
     The simplex is defined as the set of vectors x such that:
     x >= 0 and sum(x) = s.
 
-    Parameters:
+    Taken from [https://gist.github.com/daien/1272551](https://gist.github.com/daien/1272551).
+
+    Basically Implements Corollary 6.29 First Order Optimization, Amir Beck
+
+    Args:
         v (np.ndarray): The vector to be projected.
         s (float): The sum that the components of the projected vector should equal. Default is 1.
     Returns:
-        np.ndarray: The projected vector onto the simplex.
+        The projected vector onto the simplex.
     """
     assert s > 0, "Radius s must be strictly positive (%d <= 0)" % s
     v = np.reshape(v, (v.shape[0]))
@@ -77,11 +81,11 @@ def kl_divergence(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the KL divergence between two probability distributions p and q.
 
-    Parameters:
+    Args:
         p (np.ndarray): The first probability distribution.
         q (np.ndarray): The second probability distribution.
     Returns:
-        float: The KL divergence between p and q.
+        The KL divergence between p and q.
     """
     if q.ndim > 1:
         return np.sum([kl_divergence(p, q_i) for q_i in q])
@@ -93,11 +97,11 @@ def kl_reversed(p: np.ndarray, q: np.ndarray) -> float:
     """
     Compute the reversed KL divergence between two probability distributions p and q.
 
-    Parameters:
+    Args:
         p (np.ndarray): The first probability distribution.
         q (np.ndarray): The second probability distribution.
     Returns:
-        float: The reversed KL divergence between p and q.
+        The reversed KL divergence between p and q.
     """
 
     return kl_divergence(q, p)
@@ -106,10 +110,10 @@ def kl_reversed(p: np.ndarray, q: np.ndarray) -> float:
 def negative_entropy(p: np.ndarray) -> float:
     """
     Compute the negative entropy of a probability distribution p.
-    Parameters:
+    Args:
         p (np.ndarray): The probability distribution.
     Returns:
-        float: The negative entropy of the distribution.
+        The negative entropy of the distribution.
     """
     return -np.sum(p * np.log(p))
 
@@ -117,9 +121,9 @@ def negative_entropy(p: np.ndarray) -> float:
 def log_barrier(p: np.ndarray) -> float:
     """
     Compute the log barrier function for a probability distribution p.
-    Parameters:
+    Args:
         p (np.ndarray): The probability distribution.
     Returns:
-        float: The log barrier value for the distribution.
+        The log barrier value for the distribution.
     """
     return -np.sum(np.log(p))
