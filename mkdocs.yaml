@@ -1,4 +1,6 @@
 site_name: Risk-averse Quantal Equilibrium (RQE)
+site_url: https://luna-v0.github.io/RQEquilibrium/
+use_directory_urls: false
 theme:
   name: material
   palette:
