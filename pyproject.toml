@@ -7,6 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "autograd>=1.8.0",
     "matplotlib>=3.10.3",
+    "mlflow>=3.1.1",
     "nashpy>=0.0.41",
     "numpy>=2.2.6",
     "open-spiel>=1.6",
@@ -18,3 +19,6 @@ dependencies = [
 dev = [
     "ipykernel>=6.29.5",
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]

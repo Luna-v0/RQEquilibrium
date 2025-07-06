@@ -6,4 +6,4 @@ from .opt import (
     log_barrier,
     negative_entropy,
 )
-from .RQE import RQE, Player
+from .rqe import RQE, Player
